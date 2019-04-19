@@ -1,11 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import './blocs/weather_bloc.dart';
+import './repositories/weather_repository.dart';
 
 class HomePage extends StatefulWidget {
+  final WeatherRepository weatherRepository;
+
+  HomePage({Key key, @required this.weatherRepository})
+      : assert(weatherRepository != null),
+        super(key: key);
+
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+  WeatherBloc _weatherBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _weatherBloc = WeatherBloc(weatherRepository: widget.weatherRepository);
+    _weatherBloc.dispatch(FetchWeather(locationId: 1252431));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,26 +47,32 @@ class _HomePageState extends State<HomePage> {
         elevation: 0.0,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.only(left: 16, right: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.max,
-          children: <Widget>[
-            HomeScreenTopPart(),
-            HomeScreenDetails(),
-            HomeScreenNextHours(),
-            HomeScreenNextSevenDays(),
-            HomeScreenChanceOfPrecipitation()
-          ],
-        ),
-      ),
+          padding: EdgeInsets.only(left: 16, right: 16),
+          child: BlocBuilder(
+              bloc: _weatherBloc,
+              builder: (BuildContext context, WeatherState state) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
+                  children: <Widget>[
+                    _homeScreenTopPart(state),
+                    _homeScreenDetails(),
+                    _homeScreenNextHours(),
+                    _homeScreenNextSevenDays(),
+                    _homeScreenChanceOfPrecipitation(),
+                  ],
+                );
+              })),
     );
   }
-}
 
-class HomeScreenTopPart extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
+  void dispose() {
+    _weatherBloc.dispose();
+    super.dispose();
+  }
+
+  Widget _homeScreenTopPart(WeatherState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -66,7 +90,7 @@ class HomeScreenTopPart extends StatelessWidget {
         ),
         Row(
           children: <Widget>[
-            Text('36°C',
+            Text( state is WeatherLoaded ? '${state.weather.temp.toInt()}°C' : '0°C',
                 style: TextStyle(
                     color: Colors.blueGrey,
                     fontSize: 80,
@@ -135,11 +159,8 @@ class HomeScreenTopPart extends StatelessWidget {
       ],
     );
   }
-}
 
-class HomeScreenDetails extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
+  Widget _homeScreenDetails() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -170,7 +191,7 @@ class HomeScreenDetails extends StatelessWidget {
     );
   }
 
-  _contentDetail(
+  Widget _contentDetail(
       BuildContext context, IconData icon, String text, String textContent) {
     return Container(
       width: MediaQuery.of(context).size.width / 3 - 20.0,
@@ -200,9 +221,7 @@ class HomeScreenDetails extends StatelessWidget {
       ),
     );
   }
-}
 
-class HomeScreenNextHours extends StatelessWidget {
   Widget _itemListView(BuildContext context, int index) {
     return Container(
       width: 50.0,
@@ -224,8 +243,7 @@ class HomeScreenNextHours extends StatelessWidget {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _homeScreenNextHours() {
     return Column(
       children: <Widget>[
         Padding(
@@ -252,12 +270,9 @@ class HomeScreenNextHours extends StatelessWidget {
       ],
     );
   }
-}
 
-class HomeScreenNextSevenDays extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget _homeScreenNextSevenDays(){
+        return Column(
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.only(top: 32.0, bottom: 16.0),
@@ -316,12 +331,9 @@ class HomeScreenNextSevenDays extends StatelessWidget {
       ],
     );
   }
-}
 
-class HomeScreenChanceOfPrecipitation extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget _homeScreenChanceOfPrecipitation(){
+        return Container(
         child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -347,31 +359,29 @@ class HomeScreenChanceOfPrecipitation extends StatelessWidget {
                 Expanded(
                   child: Container(
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: <Widget>[
-                          Container(
-                            height: 150.0,
-                            decoration: BoxDecoration(
-                              color: Colors.grey
-                            ),
-                          ),
-                          Container(
-                            height: 40.0,
-                            child:                           ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: 6,
-                            itemBuilder: (BuildContext context, int index) {
-                              return Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                                child: Text('9am',
-                                    style: TextStyle(
-                                        color: Colors.grey, fontSize: 16.0)),
-                              );
-                            },
-                          ),
-                          )
-                        ],
-                      )),
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Container(
+                        height: 150.0,
+                        decoration: BoxDecoration(color: Colors.grey),
+                      ),
+                      Container(
+                        height: 40.0,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: 6,
+                          itemBuilder: (BuildContext context, int index) {
+                            return Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Text('9am',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 16.0)),
+                            );
+                          },
+                        ),
+                      )
+                    ],
+                  )),
                 )
               ],
             ),
