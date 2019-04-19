@@ -26,6 +26,8 @@ dependencies:
   flutter_bloc:
   http: 
   equatable:
+  date_format:
+  font_awesome_flutter:
 
 
 dev_dependencies:

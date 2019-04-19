@@ -6,13 +6,15 @@ import 'package:http/http.dart' as http;
 import '../models/models.dart';
 
 class WeatherApiClient {
-  static const baseUrl = 'https://www.metaweather.com';
+  static const baseUrlMetaWeather = 'https://www.metaweather.com';
+  static const apiKey = 'Zss8JJgAW08AqRVYSJRkODPgeHFGQIn3';
+  static const baseUrlAcCuWeather = 'http://dataservice.accuweather.com';
   final http.Client httpClient;
 
   WeatherApiClient({@required this.httpClient}) : assert(httpClient != null);
 
   Future<int> getLocationId(String city) async {
-    final locationUrl = '$baseUrl/api/location/search/?query=$city';
+    final locationUrl = '$baseUrlMetaWeather/api/location/search/?query=$city';
     final locationResponse   = await this.httpClient.get(locationUrl);
 
     if(locationResponse  .statusCode != 200) {
@@ -24,7 +26,7 @@ class WeatherApiClient {
   }
 
   Future<Weather> fetchWeather(int locationId) async {
-    final weatherUrl = '$baseUrl/api/location/$locationId';
+    final weatherUrl = '$baseUrlMetaWeather/api/location/$locationId';
     final weatherResponse = await this.httpClient.get(weatherUrl);
     if(weatherResponse.statusCode != 200) {
       throw Exception('Error getting weather for location');
@@ -32,5 +34,17 @@ class WeatherApiClient {
 
     final weatherJson = jsonDecode(weatherResponse.body);
     return Weather.fromJson(weatherJson);
+  }
+
+  Future<WeatherDetail> fetchWeatherDetail(int locationId) async {
+    print('fetchWeatherDetail');
+    final weatherDetailUrl = '$baseUrlAcCuWeather/currentconditions/v1/$locationId?apikey=$apiKey&details=true';
+    final weatherDetailResponse = await this.httpClient.get(weatherDetailUrl);
+    if(weatherDetailResponse.statusCode != 200) {
+      throw Exception('Error getting weather detail for location');
+    }
+    print('fetchWeatherDetail weatherDetailResponse OK');
+    final weatherDetailJson = jsonDecode(weatherDetailResponse.body);
+    return WeatherDetail.fromJson(weatherDetailJson);
   }
 }

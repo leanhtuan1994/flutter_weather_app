@@ -13,4 +13,8 @@ class WeatherRepository {
     return await weatherApiClient.fetchWeather(locationId);
   }
 
+  Future<WeatherDetail> getWeatherDetail(int locationId) async {
+    return await weatherApiClient.fetchWeatherDetail(locationId);
+  }
+
 }

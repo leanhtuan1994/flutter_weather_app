@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import './blocs/weather_bloc.dart';
+import 'package:flutter_weather_app/blocs/blocs.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import './repositories/weather_repository.dart';
+import 'package:date_format/date_format.dart';
+
 
 class HomePage extends StatefulWidget {
   final WeatherRepository weatherRepository;
@@ -16,12 +21,33 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   WeatherBloc _weatherBloc;
+  WeatherDetailBloc _detailBloc;
+
+  String timeString;
+  String dayOfMonth;
 
   @override
   void initState() {
     super.initState();
+
     _weatherBloc = WeatherBloc(weatherRepository: widget.weatherRepository);
     _weatherBloc.dispatch(FetchWeather(locationId: 1252431));
+
+    _detailBloc = WeatherDetailBloc(weatherRepository: widget.weatherRepository);
+    _detailBloc.dispatch(FetchWeatherDetail(locationId: 353981));
+
+    timeString = _formatDateTime(DateTime.now());
+    dayOfMonth = formatDate(DateTime.now(), [D, ', ', M,' ', dd]);
+
+    Timer.periodic(Duration(seconds: 1), (Timer timer){
+      setState(() {
+        timeString = _formatDateTime(DateTime.now());
+      });
+    });
+  }
+
+  _formatDateTime(DateTime dateTime){
+    return formatDate(dateTime, [hh, ' : ', nn,' ',am]);
   }
 
   @override
@@ -30,7 +56,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: Text('15:08 PM',
+        title: Text('$timeString',
             style: TextStyle(
                 color: Colors.white,
                 fontSize: 20,
@@ -41,7 +67,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {},
           ),
           IconButton(
-              icon: Icon(Icons.menu, color: Colors.white.withOpacity(0.8)),
+              icon: Icon(Icons.menu, color: Colors.white.withOpacity(0.8) ),
               onPressed: () {})
         ],
         elevation: 0.0,
@@ -69,6 +95,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _weatherBloc.dispose();
+    _detailBloc.dispose();
     super.dispose();
   }
 
@@ -82,8 +109,9 @@ class _HomePageState extends State<HomePage> {
             children: <Widget>[
               Container(
                 height: 400.0,
+                width: double.infinity,
                 child:
-                    Image.asset('assets/images/sydney.jpeg', fit: BoxFit.cover),
+                    Image.asset('assets/images/hochiminh.jpg', fit: BoxFit.cover),
               )
             ],
           ),
@@ -98,7 +126,7 @@ class _HomePageState extends State<HomePage> {
             SizedBox(width: 20.0),
             Column(
               children: <Widget>[
-                Text('37°',
+                Text(state is WeatherLoaded ? '${state.weather.maxTemp.toInt()}°' : '0°',
                     style: TextStyle(
                         color: Colors.blueGrey,
                         fontSize: 40,
@@ -115,7 +143,7 @@ class _HomePageState extends State<HomePage> {
             Column(
               children: <Widget>[
                 SizedBox(height: 20.0),
-                Text('28°',
+                Text(state is WeatherLoaded ? '${state.weather.minTemp.toInt()}°' : '0°',
                     style: TextStyle(
                         color: Colors.blueGrey,
                         fontSize: 40,
@@ -124,16 +152,16 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-        Text('MON, APRIL 15',
+        Text(dayOfMonth,
             style:
                 TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14)),
         SizedBox(height: 10.0),
         Text(
-          'Ho Chi Minh City',
+          state is WeatherLoaded ? '${state.weather.location}' : 'Da Lat City',
           style: TextStyle(color: Colors.white, fontSize: 24.0),
         ),
         Text(
-          'Partly Sunny',
+          state is WeatherLoaded ? '${state.weather.formattedCondition}' : 'Light Cloud',
           style:
               TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16.0),
         ),
@@ -161,33 +189,50 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _homeScreenDetails() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
-          child: Text('DETAIL',
-              style: TextStyle(
-                  color: Colors.white.withOpacity(0.7), fontSize: 14.0)),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return BlocBuilder(
+      bloc: _detailBloc,
+      builder: (_, WeatherDetailState state){
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            _contentDetail(context, Icons.flash_on, 'Realfeel', '36°C'),
-            _contentDetail(context, Icons.flash_on, 'Humidity', '78%'),
-            _contentDetail(context, Icons.flight, 'UV index', '0'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Text('DETAIL',
+                  style: TextStyle(
+                      color: Colors.white.withOpacity(0.7), fontSize: 14.0)),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                _contentDetail(
+                    context,
+                    FontAwesomeIcons.temperatureHigh,
+                    'Realfeel®',
+                    '${state is WeatherDetailLoaded ? state.weatherDetail.realFeelTemp.toInt() : '0'}°C'),
+                _contentDetail(
+                    context,
+                    FontAwesomeIcons.water,
+                    'Humidity',
+                    '${state is WeatherDetailLoaded ? state.weatherDetail.relativeHumidity : '0'}%'),
+                _contentDetail(
+                    context,
+                    FontAwesomeIcons.solidSun,
+                    'UV index',
+                    '${state is WeatherDetailLoaded ? state.weatherDetail.uvIndex : '0'}'),
+              ],
+            ),
+            SizedBox(height: 15.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                _contentDetail(context, FontAwesomeIcons.eye, 'Visibility', '${state is WeatherDetailLoaded ? state.weatherDetail.visibility.toInt() : '0'}km'),
+                _contentDetail(context, FontAwesomeIcons.temperatureLow, 'Dew point', '${state is WeatherDetailLoaded ? state.weatherDetail.dewPoint.toInt() : '0'}°C'),
+                _contentDetail(context, FontAwesomeIcons.centercode, 'Presure', '${state is WeatherDetailLoaded ? state.weatherDetail.pressure.toInt() : '0'}mb'),
+              ],
+            ),
           ],
-        ),
-        SizedBox(height: 15.0),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            _contentDetail(context, Icons.flash_on, 'Visibility', '16km'),
-            _contentDetail(context, Icons.flash_on, 'Dew point', '26°C'),
-            _contentDetail(context, Icons.flash_on, 'Presure', '1008mb'),
-          ],
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -195,7 +240,7 @@ class _HomePageState extends State<HomePage> {
       BuildContext context, IconData icon, String text, String textContent) {
     return Container(
       width: MediaQuery.of(context).size.width / 3 - 20.0,
-      height: 120.0,
+      height: MediaQuery.of(context).size.width / 3 - 20.0,
       decoration: BoxDecoration(
           shape: BoxShape.rectangle,
           borderRadius: BorderRadius.all(Radius.circular(5.0)),
@@ -211,11 +256,13 @@ class _HomePageState extends State<HomePage> {
                     color: Colors.grey,
                     fontSize: 18,
                     fontWeight: FontWeight.w200)),
-            Text(textContent,
-                style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 36,
-                    fontWeight: FontWeight.w200))
+            Flexible(
+              child: Text(textContent,
+                  style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 36,
+                      fontWeight: FontWeight.w200)),
+            )
           ],
         ),
       ),
