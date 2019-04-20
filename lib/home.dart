@@ -7,7 +7,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import './repositories/weather_repository.dart';
 import 'package:date_format/date_format.dart';
 
-
 class HomePage extends StatefulWidget {
   final WeatherRepository weatherRepository;
 
@@ -33,21 +32,22 @@ class _HomePageState extends State<HomePage> {
     _weatherBloc = WeatherBloc(weatherRepository: widget.weatherRepository);
     _weatherBloc.dispatch(FetchWeather(locationId: 1252431));
 
-    _detailBloc = WeatherDetailBloc(weatherRepository: widget.weatherRepository);
+    _detailBloc =
+        WeatherDetailBloc(weatherRepository: widget.weatherRepository);
     _detailBloc.dispatch(FetchWeatherDetail(locationId: 353981));
 
     timeString = _formatDateTime(DateTime.now());
-    dayOfMonth = formatDate(DateTime.now(), [D, ', ', M,' ', dd]);
+    dayOfMonth = formatDate(DateTime.now(), [D, ', ', MM, ' ', dd]);
 
-    Timer.periodic(Duration(seconds: 1), (Timer timer){
+    Timer.periodic(Duration(seconds: 1), (Timer timer) {
       setState(() {
         timeString = _formatDateTime(DateTime.now());
       });
     });
   }
 
-  _formatDateTime(DateTime dateTime){
-    return formatDate(dateTime, [hh, ' : ', nn,' ',am]);
+  _formatDateTime(DateTime dateTime) {
+    return formatDate(dateTime, [hh, ' : ', nn, ' ', am]);
   }
 
   @override
@@ -67,28 +67,24 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {},
           ),
           IconButton(
-              icon: Icon(Icons.menu, color: Colors.white.withOpacity(0.8) ),
+              icon: Icon(Icons.menu, color: Colors.white.withOpacity(0.8)),
               onPressed: () {})
         ],
         elevation: 0.0,
       ),
       body: SingleChildScrollView(
           padding: EdgeInsets.only(left: 16, right: 16),
-          child: BlocBuilder(
-              bloc: _weatherBloc,
-              builder: (BuildContext context, WeatherState state) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.max,
-                  children: <Widget>[
-                    _homeScreenTopPart(state),
-                    _homeScreenDetails(),
-                    _homeScreenNextHours(),
-                    _homeScreenNextSevenDays(),
-                    _homeScreenChanceOfPrecipitation(),
-                  ],
-                );
-              })),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
+            children: <Widget>[
+              _homeScreenTopPart(),
+              _homeScreenDetails(),
+              _homeScreenNextHours(),
+              _homeScreenNextSevenDays(),
+              _homeScreenChanceOfPrecipitation(),
+            ],
+          )),
     );
   }
 
@@ -99,7 +95,7 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  Widget _homeScreenTopPart(WeatherState state) {
+  Widget _homeScreenTopPart() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -110,78 +106,104 @@ class _HomePageState extends State<HomePage> {
               Container(
                 height: 400.0,
                 width: double.infinity,
-                child:
-                    Image.asset('assets/images/hochiminh.jpg', fit: BoxFit.cover),
+                child: Image.asset('assets/images/hochiminh.jpg',
+                    fit: BoxFit.cover),
               )
             ],
           ),
         ),
-        Row(
-          children: <Widget>[
-            Text( state is WeatherLoaded ? '${state.weather.temp.toInt()}°C' : '0°C',
-                style: TextStyle(
-                    color: Colors.blueGrey,
-                    fontSize: 80,
-                    fontWeight: FontWeight.w100)),
-            SizedBox(width: 20.0),
-            Column(
-              children: <Widget>[
-                Text(state is WeatherLoaded ? '${state.weather.maxTemp.toInt()}°' : '0°',
+        BlocBuilder(
+          bloc: _weatherBloc,
+          builder: (_, WeatherState state) {
+            if (state is WeatherLoading) {
+              return Container(
+                height: 200.0,
+                width: double.infinity,
+                child: Center(
+                  child: CircularProgressIndicator()),
+              ); 
+            }
+            if(state is WeatherError){
+              return Container();
+            }
+            if(state is WeatherEmpty) {
+              return Container();
+            }
+            if (state is WeatherLoaded) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Text('${state.weather.temp.toInt()}°C',
+                          style: TextStyle(
+                              color: Colors.blueGrey,
+                              fontSize: 80,
+                              fontWeight: FontWeight.w100)),
+                      SizedBox(width: 20.0),
+                      Column(
+                        children: <Widget>[
+                          Text('${state.weather.maxTemp.toInt()}°',
+                              style: TextStyle(
+                                  color: Colors.blueGrey,
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.w100)),
+                          SizedBox(height: 20.0)
+                        ],
+                      ),
+                      Text('/',
+                          style: TextStyle(
+                              color: Colors.blueGrey,
+                              fontSize: 40,
+                              fontWeight: FontWeight.w100)),
+                      SizedBox(width: 10.0),
+                      Column(
+                        children: <Widget>[
+                          SizedBox(height: 20.0),
+                          Text('${state.weather.minTemp.toInt()}°',
+                              style: TextStyle(
+                                  color: Colors.blueGrey,
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.w100)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Text(dayOfMonth,
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.5), fontSize: 14)),
+                  SizedBox(height: 10.0),
+                  Text(
+                    '${state.weather.location}',
+                    style: TextStyle(color: Colors.white, fontSize: 24.0),
+                  ),
+                  Text('${state.weather.formattedCondition}',
                     style: TextStyle(
-                        color: Colors.blueGrey,
-                        fontSize: 40,
-                        fontWeight: FontWeight.w100)),
-                SizedBox(height: 20.0)
-              ],
-            ),
-            Text('/',
-                style: TextStyle(
-                    color: Colors.blueGrey,
-                    fontSize: 40,
-                    fontWeight: FontWeight.w100)),
-            SizedBox(width: 10.0),
-            Column(
-              children: <Widget>[
-                SizedBox(height: 20.0),
-                Text(state is WeatherLoaded ? '${state.weather.minTemp.toInt()}°' : '0°',
-                    style: TextStyle(
-                        color: Colors.blueGrey,
-                        fontSize: 40,
-                        fontWeight: FontWeight.w100)),
-              ],
-            ),
-          ],
-        ),
-        Text(dayOfMonth,
-            style:
-                TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14)),
-        SizedBox(height: 10.0),
-        Text(
-          state is WeatherLoaded ? '${state.weather.location}' : 'Da Lat City',
-          style: TextStyle(color: Colors.white, fontSize: 24.0),
-        ),
-        Text(
-          state is WeatherLoaded ? '${state.weather.formattedCondition}' : 'Light Cloud',
-          style:
-              TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16.0),
-        ),
-        SizedBox(height: 10.0),
-        GestureDetector(
-          onTap: () {
-            print('tap tap');
+                        color: Colors.white.withOpacity(0.8), fontSize: 16.0),
+                  ),
+                  SizedBox(height: 10.0),
+                  GestureDetector(
+                    onTap: () {
+                      print('tap tap');
+                    },
+                    child: Row(
+                      children: <Widget>[
+                        Text(
+                          'Today - Clouds and sun; pleasant, less humid',
+                          style: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 14),
+                        ),
+                        Spacer(),
+                        Icon(Icons.play_arrow,
+                            color: Colors.white.withOpacity(0.5), size: 14.0)
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
           },
-          child: Row(
-            children: <Widget>[
-              Text(
-                'Today - Clouds and sun; pleasant, less humid',
-                style: TextStyle(
-                    color: Colors.white.withOpacity(0.5), fontSize: 14),
-              ),
-              Spacer(),
-              Icon(Icons.play_arrow,
-                  color: Colors.white.withOpacity(0.5), size: 14.0)
-            ],
-          ),
         ),
         SizedBox(height: 130.0)
       ],
@@ -191,7 +213,7 @@ class _HomePageState extends State<HomePage> {
   Widget _homeScreenDetails() {
     return BlocBuilder(
       bloc: _detailBloc,
-      builder: (_, WeatherDetailState state){
+      builder: (_, WeatherDetailState state) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -209,15 +231,9 @@ class _HomePageState extends State<HomePage> {
                     FontAwesomeIcons.temperatureHigh,
                     'Realfeel®',
                     '${state is WeatherDetailLoaded ? state.weatherDetail.realFeelTemp.toInt() : '0'}°C'),
-                _contentDetail(
-                    context,
-                    FontAwesomeIcons.water,
-                    'Humidity',
+                _contentDetail(context, FontAwesomeIcons.water, 'Humidity',
                     '${state is WeatherDetailLoaded ? state.weatherDetail.relativeHumidity : '0'}%'),
-                _contentDetail(
-                    context,
-                    FontAwesomeIcons.solidSun,
-                    'UV index',
+                _contentDetail(context, FontAwesomeIcons.solidSun, 'UV index',
                     '${state is WeatherDetailLoaded ? state.weatherDetail.uvIndex : '0'}'),
               ],
             ),
@@ -225,9 +241,15 @@ class _HomePageState extends State<HomePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                _contentDetail(context, FontAwesomeIcons.eye, 'Visibility', '${state is WeatherDetailLoaded ? state.weatherDetail.visibility.toInt() : '0'}km'),
-                _contentDetail(context, FontAwesomeIcons.temperatureLow, 'Dew point', '${state is WeatherDetailLoaded ? state.weatherDetail.dewPoint.toInt() : '0'}°C'),
-                _contentDetail(context, FontAwesomeIcons.centercode, 'Presure', '${state is WeatherDetailLoaded ? state.weatherDetail.pressure.toInt() : '0'}mb'),
+                _contentDetail(context, FontAwesomeIcons.eye, 'Visibility',
+                    '${state is WeatherDetailLoaded ? state.weatherDetail.visibility.toInt() : '0'}km'),
+                _contentDetail(
+                    context,
+                    FontAwesomeIcons.temperatureLow,
+                    'Dew point',
+                    '${state is WeatherDetailLoaded ? state.weatherDetail.dewPoint.toInt() : '0'}°C'),
+                _contentDetail(context, FontAwesomeIcons.centercode, 'Presure',
+                    '${state is WeatherDetailLoaded ? state.weatherDetail.pressure.toInt() : '0'}mb'),
               ],
             ),
           ],
@@ -318,8 +340,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _homeScreenNextSevenDays(){
-        return Column(
+  Widget _homeScreenNextSevenDays() {
+    return Column(
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.only(top: 32.0, bottom: 16.0),
@@ -379,8 +401,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _homeScreenChanceOfPrecipitation(){
-        return Container(
+  Widget _homeScreenChanceOfPrecipitation() {
+    return Container(
         child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[

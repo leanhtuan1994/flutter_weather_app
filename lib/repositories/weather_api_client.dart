@@ -7,7 +7,7 @@ import '../models/models.dart';
 
 class WeatherApiClient {
   static const baseUrlMetaWeather = 'https://www.metaweather.com';
-  static const apiKey = 'Zss8JJgAW08AqRVYSJRkODPgeHFGQIn3';
+  static const apiKey = 'MK0TRDzTVOksTCCF6UZjbqZJbDvGAT0T';
   static const baseUrlAcCuWeather = 'http://dataservice.accuweather.com';
   final http.Client httpClient;
 
