@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_weather_app/blocs/blocs.dart';
+import 'package:flutter_weather_app/models/models.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import './repositories/weather_repository.dart';
 import 'package:date_format/date_format.dart';
@@ -24,6 +25,7 @@ class _HomePageState extends State<HomePage> {
 
   String timeString;
   String dayOfMonth;
+
 
   @override
   void initState() {
@@ -119,14 +121,13 @@ class _HomePageState extends State<HomePage> {
               return Container(
                 height: 200.0,
                 width: double.infinity,
-                child: Center(
-                  child: CircularProgressIndicator()),
-              ); 
+                child: Center(child: CircularProgressIndicator()),
+              );
             }
-            if(state is WeatherError){
+            if (state is WeatherError) {
               return Container();
             }
-            if(state is WeatherEmpty) {
+            if (state is WeatherEmpty) {
               return Container();
             }
             if (state is WeatherLoaded) {
@@ -177,7 +178,8 @@ class _HomePageState extends State<HomePage> {
                     '${state.weather.location}',
                     style: TextStyle(color: Colors.white, fontSize: 24.0),
                   ),
-                  Text('${state.weather.formattedCondition}',
+                  Text(
+                    '${state.weather.formattedCondition}',
                     style: TextStyle(
                         color: Colors.white.withOpacity(0.8), fontSize: 16.0),
                   ),
@@ -291,7 +293,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _itemListView(BuildContext context, int index) {
+  Widget _itemListView(BuildContext context, int index, WeatherDetail weatherDetail) {
     return Container(
       width: 50.0,
       height: 130.0,
@@ -303,10 +305,10 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          Text('26°', style: TextStyle(color: Colors.white70, fontSize: 16.0)),
+          Text('${weatherDetail.tempNextHours[index]}°', style: TextStyle(color: Colors.white70, fontSize: 16.0)),
           Icon(index % 2 == 1 ? Icons.cloud_queue : Icons.brightness_3,
               size: 16.0, color: Colors.white70),
-          Text('9 pm', style: TextStyle(color: Colors.grey, fontSize: 14.0))
+          Text('${((DateTime.now().hour + index) % 12)} ${((DateTime.now().hour + index) % 24) > 12 ? 'pm' : 'am'}', style: TextStyle(color: Colors.grey, fontSize: 14.0))
         ],
       ),
     );
@@ -319,7 +321,7 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.only(top: 32.0, bottom: 16.0),
           child: Row(
             children: <Widget>[
-              Text('NEXT 24 HOURS',
+              Text('NEXT 12 HOURS',
                   style: TextStyle(
                       color: Colors.white.withOpacity(0.7), fontSize: 14.0)),
               Spacer(),
@@ -328,13 +330,29 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
-        Container(
-          height: 130.0,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemBuilder: _itemListView,
-            itemCount: 24,
-          ),
+        BlocBuilder(
+          bloc: _detailBloc,
+          builder: (_, WeatherDetailState state) {
+            if (state is WeatherDetailLoaded) {
+              return Container(
+                height: 130.0,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemBuilder: (_, int index) {
+                    return _itemListView(context, index, state.weatherDetail);
+                  },
+                  itemCount: 12,
+                ),
+              );
+            } else {
+              return Container(
+                height: 130.0,
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+          },
         )
       ],
     );

@@ -45,6 +45,14 @@ class WeatherApiClient {
     }
     print('fetchWeatherDetail weatherDetailResponse OK');
     final weatherDetailJson = jsonDecode(weatherDetailResponse.body);
-    return WeatherDetail.fromJson(weatherDetailJson);
+
+    // Find next 12 hours json 
+    final weatherNextHourUrl = '$baseUrlAcCuWeather/forecasts/v1/hourly/12hour/$locationId?apikey=$apiKey';
+    final weatherNextHourResponse = await this.httpClient.get(weatherNextHourUrl);
+    if(weatherNextHourResponse.statusCode != 200) {
+      throw Exception('Error getting weather deatail for next 12 hours');
+    }
+    final weatherNextHoursJson = jsonDecode(weatherNextHourResponse.body);
+    return WeatherDetail.fromJson(weatherDetailJson, weatherNextHoursJson);
   }
 }

@@ -9,6 +9,7 @@ class WeatherDetail extends Equatable {
   final int uvIndex;
   final double visibility;
   final double pressure;
+  final List<int> tempNextHours;
 
   WeatherDetail({
     this.weatherStatus,
@@ -18,7 +19,8 @@ class WeatherDetail extends Equatable {
     this.dewPoint,
     this.uvIndex,
     this.visibility,
-    this.pressure
+    this.pressure,
+    this.tempNextHours
   }) : super([
     weatherStatus,
     temp,
@@ -27,11 +29,24 @@ class WeatherDetail extends Equatable {
     dewPoint,
     uvIndex,
     visibility,
-    pressure
+    pressure,
+    tempNextHours
   ]);
 
-  static WeatherDetail fromJson(dynamic json) {
+  static int _convertFtoC(int temp) {
+    return (temp-32) ~/ 1.8;
+  }
+
+  static WeatherDetail fromJson(dynamic json, dynamic nextHoursJson) {
     final weatherDetailJson = json[0];
+    List<int> tempList = List();
+
+    for(int i = 0; i < 12; i++) {
+      double temp = nextHoursJson[i]['Temperature']['Value'];
+      print('temp$i: $temp');
+      tempList.add(_convertFtoC(temp.toInt()));
+    }
+
     print(weatherDetailJson);
     return WeatherDetail(
         weatherStatus : weatherDetailJson['WeatherText'],
@@ -41,7 +56,8 @@ class WeatherDetail extends Equatable {
         dewPoint: weatherDetailJson['DewPoint']['Metric']['Value'] as double,
         uvIndex: weatherDetailJson['UVIndex'] as int,
         visibility: weatherDetailJson['Visibility']['Metric']['Value'] as double,
-        pressure: weatherDetailJson['Pressure']['Metric']['Value']
+        pressure: weatherDetailJson['Pressure']['Metric']['Value'],
+        tempNextHours: tempList
     );
   }
 }
